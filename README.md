@@ -6,3 +6,4 @@ Built as a single dependency-free HTML file — no framework,
  so I rewrote them around opacity/transform only,
  and fixed a classic flexbox overflow bug 
 (implicit min-width: auto) that broke long strings on narrow screens.
+https://100keys.github.io/MaliAbadRitual/
