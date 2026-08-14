@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Ritual of Maliabad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --gold: #c9a24b;
+    --gold-bright: #f0d78c;
+    --gold-dim: #8a6f2e;
+    --black: #060504;
+    --void: #030202;
+    --ash-purple: #241726;
+    --blood: #2a0a0a;
+    --deep-black: #08070a;
+    --ink: #e9dfc8;
+    --ink-dim: #a99f88;
+  }
+
+  *{ box-sizing:border-box; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important; }
+  }
+
+  html,body{
+    margin:0; padding:0; min-height:100vh;
+    background: var(--black);
+    color: var(--ink);
+    font-family: 'EB Garamond', serif;
+    overflow-x:hidden;
+  }
+
+  body{
+    position:relative;
+    transition: background-color 3.5s ease;
+    background-color: var(--void);
+  }
+
+  /* subtle vignette (the animated grain overlay was removed for mobile performance) */
+  body::before{
+    content:"";
+    position:fixed; inset:0;
+    pointer-events:none;
+    z-index:1;
+    background:
+      radial-gradient(ellipse at center, rgba(0,0,0,0) 35%, rgba(0,0,0,0.75) 100%);
+  }
+
+  .bg-void{ background-color: var(--void); }
+  .bg-ash{ background-color: var(--ash-purple); }
+  .bg-blood{ background-color: var(--blood); }
+  .bg-deep{ background-color: var(--deep-black); }
+
+  /* corner symbols */
+  .corner-symbols{
+    position:fixed; inset:0; z-index:3; pointer-events:none;
+  }
+  .corner-symbols svg{
+    position:absolute; width:56px; height:56px; color: var(--gold);
+    opacity:0; filter: drop-shadow(0 0 6px rgba(201,162,75,0.55));
+  }
+  .sym-circle{ top:4%; left:3%; animation: emerge 11s ease-in-out infinite; }
+  .sym-eye{ top:4%; right:3%; animation: emerge 13s ease-in-out infinite 2.5s; }
+  .sym-cross{ bottom:5%; left:3%; animation: emerge 15s ease-in-out infinite 5s; }
+  .sym-serpent{ bottom:5%; right:3%; animation: emerge 12.5s ease-in-out infinite 1.2s; }
+
+  @keyframes emerge{
+    0%{ opacity:0; }
+    45%{ opacity:0.4; }
+    55%{ opacity:0.4; }
+    100%{ opacity:0; }
+  }
+
+  /* pause the corner symbols while the question form is on screen, since
+     typing is when animation cost is most noticeable on slower phones */
+  body.symbols-hidden .corner-symbols{ display:none; }
+
+  .app{
+    position:relative; z-index:5;
+    min-height:100vh;
+    display:flex; align-items:center; justify-content:center;
+    padding: 6vh 5vw;
+  }
+
+  .screen{ display:none; width:100%; max-width:720px; text-align:center; }
+  .screen.active{ display:block; animation: screenIn 1.6s ease; }
+
+  @keyframes screenIn{
+    from{ opacity:0; transform: translateY(14px); }
+    to{ opacity:1; transform: translateY(0); }
+  }
+
+  /* ---------- Title / glow ---------- */
+  .glow-title{
+    font-family:'Cinzel Decorative', serif;
+    font-weight:700;
+    font-size: clamp(2.1rem, 6vw, 3.6rem);
+    color: var(--gold-bright);
+    letter-spacing: 0.03em;
+    margin: 0 0 0.6rem;
+    text-shadow:
+      0 0 6px rgba(240,215,140,0.55),
+      0 0 18px rgba(201,162,75,0.55),
+      0 0 42px rgba(201,162,75,0.35);
+    animation: titlePulse 5s ease-in-out infinite;
+  }
+  /* animates opacity only (GPU-cheap) rather than text-shadow, which forces a repaint every frame */
+  @keyframes titlePulse{
+    0%,100%{ opacity:0.92; }
+    50%{ opacity:1; }
+  }
+
+  .subtitle{
+    font-family:'Cinzel', serif;
+    font-size: clamp(0.85rem, 2vw, 1.05rem);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin: 0 0 3.2rem;
+  }
+
+  .sigil-divider{
+    display:flex; align-items:center; justify-content:center; gap:0.8rem;
+    margin: 1.6rem auto 2.6rem; color: var(--gold-dim);
+  }
+  .sigil-divider::before, .sigil-divider::after{
+    content:""; height:1px; width:70px;
+    background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+  }
+  .sigil-divider svg{ width:20px; height:20px; }
+
+  /* ---------- Form ---------- */
+  .questions{ text-align:left; display:flex; flex-direction:column; gap:1.5rem; }
+  .field label{
+    display:block; font-family:'Cinzel', serif; font-size:0.78rem;
+    letter-spacing:0.12em; text-transform:uppercase; color: var(--gold-dim);
+    margin-bottom:0.5rem;
+  }
+  .field input{
+    width:100%; background: rgba(255,255,255,0.02);
+    border:none; border-bottom:1px solid rgba(201,162,75,0.35);
+    color: var(--ink); font-family:'EB Garamond', serif; font-style:italic;
+    font-size:1.15rem; padding:0.55rem 0.2rem; outline:none;
+    transition: border-color 0.4s ease, background 0.4s ease;
+  }
+  .field input:focus{
+    border-bottom-color: var(--gold-bright);
+    background: rgba(201,162,75,0.05);
+  }
+  .field .err{
+    min-height:1.1em; font-family:'EB Garamond', serif; font-style:italic;
+    font-size:0.85rem; color:#b5544f; margin-top:0.35rem; opacity:0;
+    transition: opacity 0.4s ease;
+  }
+  .field .err.show{ opacity:1; }
+
+  /* ---------- Buttons ---------- */
+  .ritual-btn{
+    font-family:'Cinzel', serif; letter-spacing:0.14em; text-transform:uppercase;
+    font-size:0.95rem; color: var(--gold-bright);
+    background: linear-gradient(180deg, rgba(201,162,75,0.10), rgba(0,0,0,0));
+    border:1px solid rgba(201,162,75,0.55);
+    padding:0.95rem 2.2rem; cursor:pointer; border-radius:2px;
+    margin-top: 1rem;
+    transition: box-shadow 0.5s ease, background 0.5s ease, transform 0.3s ease, letter-spacing 0.5s ease;
+    box-shadow: 0 0 10px rgba(201,162,75,0.15);
+  }
+  .ritual-btn:hover{
+    background: rgba(201,162,75,0.14);
+    box-shadow: 0 0 22px rgba(201,162,75,0.5), inset 0 0 14px rgba(201,162,75,0.15);
+    letter-spacing:0.2em;
+  }
+  .ritual-btn:active{ transform: scale(0.98); }
+  .ritual-btn:focus-visible{ outline:2px solid var(--gold-bright); outline-offset:3px; }
+
+  /* ---------- Story ---------- */
+  .story-text, .ending-text, .choice-btn{
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+  .story-text{
+    font-family:'Cinzel', serif; font-weight:400;
+    font-size: clamp(1.15rem, 3vw, 1.65rem);
+    line-height:1.75; color: var(--ink);
+    text-shadow: 0 0 14px rgba(201,162,75,0.18);
+    min-height: 9rem;
+    display:flex; align-items:center; justify-content:center;
+    min-width:0;
+    opacity:0;
+  }
+  .story-text.show{
+    animation: slowFade 2.6s ease forwards;
+  }
+  @keyframes slowFade{
+    0%{ opacity:0; letter-spacing:0.08em; }
+    100%{ opacity:1; letter-spacing:normal; }
+  }
+  .story-text em{ color: var(--gold-bright); font-style:italic; }
+
+  .choices{ margin-top:2.5rem; text-align:left; display:flex; flex-direction:column; gap:1rem; }
+  .choice-btn{
+    width:100%; text-align:left;
+    background: rgba(255,255,255,0.015);
+    border:1px solid rgba(201,162,75,0.28);
+    color: var(--ink); font-family:'EB Garamond', serif; font-style:italic;
+    font-size:1.08rem; line-height:1.5; padding:1rem 1.2rem; cursor:pointer;
+    transition: border-color 0.4s ease, background 0.4s ease, box-shadow 0.4s ease;
+  }
+  .choice-btn span.num{
+    font-family:'Cinzel', serif; font-style:normal; color: var(--gold-bright);
+    margin-right:0.6rem;
+  }
+  .choice-btn:hover{
+    border-color: var(--gold-bright);
+    background: rgba(201,162,75,0.06);
+    box-shadow: 0 0 16px rgba(201,162,75,0.25);
+  }
+
+  /* ---------- Ending ---------- */
+  .ending-text{
+    font-family:'Cinzel', serif; font-size: clamp(1.1rem, 2.8vw, 1.5rem);
+    line-height:1.85; color: var(--gold-bright);
+    text-shadow: 0 0 16px rgba(201,162,75,0.35);
+    opacity:0; animation: slowFade 2.8s ease forwards;
+    margin-bottom: 2.2rem;
+  }
+  .common-line{
+    font-family:'EB Garamond', serif; font-style:italic; font-size:1.15rem;
+    color: var(--gold);
+    opacity:0; animation: slowFade 3s ease forwards 0.4s;
+    animation-fill-mode: both;
+    margin: 2rem 0 2.4rem;
+    text-shadow: 0 0 10px rgba(201,162,75,0.3);
+  }
+
+  .exit-text{
+    font-family:'Cinzel Decorative', serif; font-weight:700;
+    font-size: clamp(1.6rem, 5vw, 2.6rem);
+    color: var(--gold-bright);
+    text-shadow: 0 0 10px rgba(240,215,140,0.6), 0 0 30px rgba(201,162,75,0.6), 0 0 60px rgba(201,162,75,0.4);
+    opacity:0; margin-top:2.5rem;
+    animation: exitGlow 2.4s ease forwards;
+  }
+  @keyframes exitGlow{
+    0%{ opacity:0; transform:scale(0.96); }
+    60%{ opacity:1; transform:scale(1.02); }
+    100%{ opacity:1; transform:scale(1); }
+  }
+
+  .hidden{ display:none !important; }
+
+  footer.credit{
+    position:fixed; bottom:10px; left:0; right:0; text-align:center;
+    font-family:'EB Garamond', serif; font-size:0.72rem; letter-spacing:0.08em;
+    color: rgba(169,159,136,0.35); z-index:5;
+  }
+</style>
+</head>
+<body class="bg-void symbols-hidden">
+
+  <div class="corner-symbols" aria-hidden="true">
+    <svg class="sym-circle" viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="50" cy="50" r="4" fill="currentColor"/></svg>
+    <svg class="sym-eye" viewBox="0 0 100 60"><path d="M2 30 Q50 -5 98 30 Q50 65 2 30 Z" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="50" cy="30" r="10" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="50" cy="30" r="3" fill="currentColor"/></svg>
+    <svg class="sym-cross" viewBox="0 0 100 100"><line x1="50" y1="6" x2="50" y2="94" stroke="currentColor" stroke-width="1.6"/><line x1="18" y1="32" x2="82" y2="32" stroke="currentColor" stroke-width="1.6"/></svg>
+    <svg class="sym-serpent" viewBox="0 0 100 100"><path d="M20 90 Q10 70 30 60 Q55 48 30 35 Q10 24 25 10" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="25" cy="10" r="3.2" fill="currentColor"/></svg>
+  </div>
+
+  <div class="app">
+
+    <!-- SCREEN 1: QUESTIONS -->
+    <section id="screen-questions" class="screen active">
+      <h1 class="glow-title">The Ritual of Maliabad</h1>
+      <p class="subtitle">Answer My Most Magical Questions To Unlock Your Truth</p>
+
+      <form class="questions" id="ritual-form" novalidate>
+        <div class="field">
+          <label for="friend">Name of your friend please:</label>
+          <input type="text" id="friend" maxlength="13" autocomplete="off">
+          <div class="err" id="err-friend"></div>
+        </div>
+        <div class="field">
+          <label for="fear">Name Me Your Greatest Fear:</label>
+          <input type="text" id="fear" maxlength="13" autocomplete="off">
+          <div class="err" id="err-fear"></div>
+        </div>
+        <div class="field">
+          <label for="enemy">Name Me Your Biggest Foe:</label>
+          <input type="text" id="enemy" maxlength="13" autocomplete="off">
+          <div class="err" id="err-enemy"></div>
+        </div>
+        <div class="field">
+          <label for="strength">What Is Your Biggest Strength:</label>
+          <input type="text" id="strength" maxlength="13" autocomplete="off">
+          <div class="err" id="err-strength"></div>
+        </div>
+        <div class="field">
+          <label for="lucky">What Is Your Lucky Number:</label>
+          <input type="text" id="lucky" inputmode="numeric" autocomplete="off">
+          <div class="err" id="err-lucky"></div>
+        </div>
+
+        <div style="text-align:center;">
+          <button type="submit" class="ritual-btn" id="begin-btn">Begin the Ritual</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- SCREEN 2: STORY -->
+    <section id="screen-story" class="screen">
+      <div class="story-text" id="story-text"></div>
+      <div style="text-align:center;">
+        <button class="ritual-btn hidden" id="continue-btn">Press Enter to continue</button>
+      </div>
+      <div class="choices hidden" id="choices"></div>
+    </section>
+
+    <!-- SCREEN 3: ENDING -->
+    <section id="screen-ending" class="screen">
+      <div class="ending-text" id="ending-text"></div>
+      <div class="common-line" id="common-line">
+        “There Wasn't Anything There to Save In The First Place.<br>
+        World Goes Around Only For You, It's Child.”
+      </div>
+      <div style="text-align:center;">
+        <button class="ritual-btn" id="exit-btn">Press Enter to exit</button>
+      </div>
+      <div class="exit-text hidden" id="exit-text">I Don't Want To Exit</div>
+    </section>
+
+  </div>
+
+  <footer class="credit">The Ritual of Maliabad</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  const state = { friend:"", fear:"", enemy:"", strength:"", lucky:"" };
+  const previousAnswers = [];
+
+  const screens = {
+    questions: document.getElementById('screen-questions'),
+    story: document.getElementById('screen-story'),
+    ending: document.getElementById('screen-ending')
+  };
+
+  function showScreen(name){
+    Object.values(screens).forEach(s => s.classList.remove('active'));
+    screens[name].classList.add('active');
+    document.body.classList.toggle('symbols-hidden', name === 'questions');
+  }
+
+  function setBg(cls){
+    document.body.classList.remove('bg-void','bg-ash','bg-blood','bg-deep');
+    document.body.classList.add(cls);
+  }
+
+  // ---------- validation ----------
+  function isLettersAndSpaces(str){
+    return /^[A-Za-z ]+$/.test(str);
+  }
+
+  const MAX_NAME_LEN = 13;
+
+  function validateNameField(inputEl, errEl, isUnique){
+    const val = inputEl.value.trim();
+    if(val === ""){
+      errEl.textContent = "You Must Give An Answer";
+      errEl.classList.add('show');
+      return null;
+    }
+    if(!isLettersAndSpaces(val)){
+      errEl.textContent = "Speak Only In Words — No Numbers or Symbols";
+      errEl.classList.add('show');
+      return null;
+    }
+    if(val.length > MAX_NAME_LEN){
+      errEl.textContent = "Speak No More Than Thirteen Letters";
+      errEl.classList.add('show');
+      return null;
+    }
+    if(isUnique && previousAnswers.includes(val.toLowerCase())){
+      errEl.textContent = "That Name Has Already Been Spoken";
+      errEl.classList.add('show');
+      return null;
+    }
+    errEl.classList.remove('show');
+    return val;
+  }
+
+  function validateLucky(inputEl, errEl){
+    const val = inputEl.value.trim();
+    if(val === "" || !/^[0-9]+$/.test(val)){
+      errEl.textContent = "Numbers Alone Reveal The Hour";
+      errEl.classList.add('show');
+      return null;
+    }
+    errEl.classList.remove('show');
+    return val;
+  }
+
+  document.getElementById('ritual-form').addEventListener('submit', function(e){
+    e.preventDefault();
+    previousAnswers.length = 0;
+
+    const friendEl = document.getElementById('friend');
+    const fearEl = document.getElementById('fear');
+    const enemyEl = document.getElementById('enemy');
+    const strengthEl = document.getElementById('strength');
+    const luckyEl = document.getElementById('lucky');
+
+    const friend = validateNameField(friendEl, document.getElementById('err-friend'), true);
+    if(friend) previousAnswers.push(friend.toLowerCase());
+
+    const fear = validateNameField(fearEl, document.getElementById('err-fear'), true);
+    if(fear) previousAnswers.push(fear.toLowerCase());
+
+    const enemy = validateNameField(enemyEl, document.getElementById('err-enemy'), true);
+    if(enemy) previousAnswers.push(enemy.toLowerCase());
+
+    const strength = validateNameField(strengthEl, document.getElementById('err-strength'), true);
+    if(strength) previousAnswers.push(strength.toLowerCase());
+
+    const lucky = validateLucky(luckyEl, document.getElementById('err-lucky'));
+
+    if(!friend || !fear || !enemy || !strength || !lucky) return;
+
+    state.friend = friend;
+    state.fear = fear;
+    state.enemy = enemy;
+    state.strength = strength;
+    state.lucky = lucky;
+
+    beginRitual();
+  });
+
+  // ---------- story ----------
+  let stepIndex = 0;
+  let steps = [];
+  const stepBackgrounds = ['bg-void','bg-ash','bg-blood','bg-deep','bg-void'];
+
+  function buildSteps(){
+    return [
+      `One Night, Under The Burning Eye Of The Sun.`,
+      `You See Your Friend <em>${state.friend}</em>, Next To Your Worst Enemy, <em>${state.enemy}</em>.`,
+      `The Fear of <em>${state.fear}</em> Gets Complete Hold Of You As You See<br><em>${state.enemy}</em> &amp; <em>${state.friend}</em> Coming Close To You, Both With Open Arms.`,
+      `It is The <em>${state.lucky}th</em> Hour Of The Day &amp; The Air Grows Heavy With Decision.`,
+      `Free Will Has Chosen To Visit You Tonight.`
+    ];
+  }
+
+  const storyTextEl = document.getElementById('story-text');
+  const continueBtn = document.getElementById('continue-btn');
+  const choicesEl = document.getElementById('choices');
+
+  function beginRitual(){
+    steps = buildSteps();
+    stepIndex = 0;
+    choicesEl.classList.add('hidden');
+    choicesEl.innerHTML = '';
+    showScreen('story');
+    setBg(stepBackgrounds[0]);
+    renderStep();
+  }
+
+  function renderStep(){
+    storyTextEl.classList.remove('show');
+    // force reflow so the fade-in animation replays
+    void storyTextEl.offsetWidth;
+    setBg(stepBackgrounds[stepIndex] || 'bg-void');
+
+    setTimeout(function(){
+      storyTextEl.innerHTML = steps[stepIndex];
+      storyTextEl.classList.add('show');
+      continueBtn.classList.remove('hidden');
+      continueBtn.focus();
+    }, 250);
+  }
+
+  function advanceStep(){
+    if(!screens.story.classList.contains('active')) return;
+    if(!continueBtn.classList.contains('hidden') === false){}
+    if(continueBtn.classList.contains('hidden')) return;
+
+    continueBtn.classList.add('hidden');
+    stepIndex++;
+
+    if(stepIndex < steps.length){
+      renderStep();
+    } else {
+      revealChoices();
+    }
+  }
+
+  function revealChoices(){
+    storyTextEl.classList.remove('show');
+    void storyTextEl.offsetWidth;
+    setTimeout(function(){
+      storyTextEl.innerHTML = `What do you do?`;
+      storyTextEl.classList.add('show');
+
+      choicesEl.innerHTML = `
+        <button class="choice-btn" data-choice="1"><span class="num">I.</span>You Murder Them Both With The Power Of <em>${state.strength}</em></button>
+        <button class="choice-btn" data-choice="2"><span class="num">II.</span>Hug Them Both &amp; Let Go Of Fear, Of <em>${state.fear}</em></button>
+        <button class="choice-btn" data-choice="3"><span class="num">III.</span>Shake Hands, Since It's Only The <em>${state.lucky}th</em> Hour Of The Day</button>
+      `;
+      choicesEl.classList.remove('hidden');
+
+      choicesEl.querySelectorAll('.choice-btn').forEach(btn => {
+        btn.addEventListener('click', function(){
+          resolveEnding(btn.getAttribute('data-choice'));
+        });
+      });
+    }, 250);
+  }
+
+  continueBtn.addEventListener('click', advanceStep);
+
+  // ---------- ending ----------
+  const endingTextEl = document.getElementById('ending-text');
+  const commonLineEl = document.getElementById('common-line');
+  const exitBtn = document.getElementById('exit-btn');
+  const exitTextEl = document.getElementById('exit-text');
+
+  const endingBackgrounds = { "1":"bg-blood", "2":"bg-void", "3":"bg-deep" };
+
+  function resolveEnding(choice){
+    let text = "";
+    if(choice === "1"){
+      text = `You Rise Like a Phoenix From The Ash,<br>Drawing Blood From The Necks Of Both Friend &amp; Foe,<br>Through Sacred Violence, You Transcend.`;
+    } else if(choice === "2"){
+      text = `Your Fear Of <em>${state.fear}</em> Did Not Get The Best Of You Today.<br>May You Be Free From Any &amp; All Prisons.<br>You Will, With This Attitude.`;
+    } else {
+      text = `Shame On Me For Questioning You, My Friend;<br>The Circle Closes.`;
+    }
+
+    setBg(endingBackgrounds[choice] || 'bg-void');
+    endingTextEl.innerHTML = text;
+    endingTextEl.classList.remove('show');
+    void endingTextEl.offsetWidth;
+
+    exitBtn.classList.remove('hidden');
+    exitTextEl.classList.add('hidden');
+
+    showScreen('ending');
+  }
+
+  function handleExit(){
+    exitBtn.classList.add('hidden');
+    exitTextEl.classList.remove('hidden');
+    void exitTextEl.offsetWidth;
+    setBg('bg-deep');
+  }
+
+  exitBtn.addEventListener('click', handleExit);
+
+  // allow the physical Enter key to act as "press enter" throughout,
+  // matching the ritual's own instructions
+  document.addEventListener('keydown', function(e){
+    if(e.key !== 'Enter') return;
+
+    if(screens.story.classList.contains('active') && !continueBtn.classList.contains('hidden')){
+      e.preventDefault();
+      advanceStep();
+    } else if(screens.ending.classList.contains('active') && !exitBtn.classList.contains('hidden')){
+      e.preventDefault();
+      handleExit();
+    }
+  });
+
+})();
+</script>
+
+</body>
+</html>
